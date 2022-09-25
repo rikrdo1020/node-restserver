@@ -1,45 +1,79 @@
 const { response, request } = require('express');
+const bcryptjs = require('bcryptjs');
 
-const usersGet = (req = request, res = response) => {
-    const {q, nombre, apikey, page = 1} = req.query;
+const User = require('../models/user');
+
+const usersGet = async(req = request, res = response) => {
+
+    const { limit = 5, from = 0 } = req.query;
+    const query = { state: true}
+
+    // const users = await User.find(query)
+    //     .skip(Number(from))
+    //     .limit(Number(limit));
+    
+    // const total = await User.countDocuments(query);
+
+    const [ total, users ] = await Promise.all([
+        User.countDocuments(query),
+        User.find(query)
+            .skip(Number(from))
+            .limit(Number(limit))
+    ]);
+
     res.json({
-        msg: 'get API - controlador',
-        q,
-        nombre,
-        apikey,
-        page
+        total,
+        users
+    });
+}
+
+const usersPost = async(req, res = response) => {
+
+    const { name, email, password, role } = req.body;
+    const user = new User( {name, email, password, role } );
+
+    //Encriptar la contraseña
+    const salt = bcryptjs.genSaltSync();
+    user.password = bcryptjs.hashSync( password, salt );
+
+    //Guardar en BD
+    await user.save()
+
+    res.json({
+        user
     })
 }
 
-const usersPost = (req, res = response) => {
+const usersPut = async (req, res = response) => {
 
-    const { nombre, edad } = req.body;
+    const { id } = req.params.id;
+    const { _id, password, google, email, ...rest} = req.body;
 
-    res.json({
-        msg: 'post API - controlador',
-        nombre,
-        edad
-    })
+    if ( password ){
+        //Encriptar la contraseña
+        const salt = bcryptjs.genSaltSync();
+        rest.password = bcryptjs.hashSync( password, salt );
+    }
+
+    const usuario = await User.findOneAndUpdate( id, rest );
+
+    res.json(usuario);
 }
 
-const usersPut = (req, res = response) => {
-
-    const id = req.params.id;
-
-    res.json({
-        msg: 'put API - controlador',
-        id
-    })
-}
 const usersPatch = (req, res = response) => {
     res.json({
         msg: 'patch API - controlador'
     })
 }
-const usersDelete = (req, res = response) => {
-    res.json({
-        msg: 'delete API - controlador'
-    })
+const usersDelete = async(req, res = response) => {
+    const { id } = req.params;
+
+    // Fisicamente lo borramos
+    //const user = await User.findByIdAndDelete( id );
+
+    const user = await User.findByIdAndUpdate( id, { state: false });
+
+    res.json(user);
 }
 
 module.exports = {
