@@ -1,5 +1,4 @@
-const Role = require('../models/role');
-const User = require('../models/user');
+const { Category, Role, User, Product } = require('../models');
 const ObjectId = require('mongoose').Types.ObjectId;
 
 const isRoleValid = async(role = '') => {
@@ -25,8 +24,35 @@ const userExistByID = async(id = '') => {
         throw new Error(`The id ${id} doesn't exist`)
     }
 }
+
+/**
+ * 
+ * @param {*} id 
+ * Validador personalizado para verificar si existe el id de la categoria
+ */
+const categoryExistByID = async(id = '') => {
+    // Verificar si el id existe
+    const categoryExist = await Category.findById(id);
+    if(!categoryExist){
+        throw new Error(`The id ${id} doesn't exist`)
+    }
+}
+
+/**
+ * 
+ */
+ const productExistByID = async(id = '') => {
+    // Verificar si el id existe
+    const productExist = await Product.findById(id);
+    if(!productExist){
+        throw new Error(`The id ${id} doesn't exist`)
+    }
+}
+
 module.exports = {
     isRoleValid,
     emailExist,
-    userExistByID
+    userExistByID,
+    categoryExistByID,
+    productExistByID
 }
